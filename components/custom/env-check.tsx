@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { useAppTranslations } from '@/components/custom/i18n-provider';
 
 /**
  * Fires a warning toast on first mount if either required env var is not set.
@@ -14,6 +15,8 @@ import { toast } from 'sonner';
  * automatically.
  */
 export function EnvCheck() {
+  const { localize } = useAppTranslations();
+
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_PREVIEW_MODE === 'true') return;
     if (
@@ -22,9 +25,9 @@ export function EnvCheck() {
     )
       return;
     if (!process.env.NEXT_PUBLIC_DERIV_APP_ID || !process.env.NEXT_PUBLIC_DERIV_REDIRECT_URI) {
-      toast.warning('Waiting for environment variables to be set…');
+      toast.warning(localize('Waiting for environment variables to be set…'));
     }
-  }, []);
+  }, [localize]);
 
   return null;
 }

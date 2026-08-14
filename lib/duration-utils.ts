@@ -28,14 +28,19 @@ export interface TradingSymbolData {
 
 const DURATION_ORDER: DurationSelectUnit[] = ['t', 's', 'm', 'h', 'd', 'end-time'];
 
-const DURATION_LABELS: Record<DurationSelectUnit, string> = {
-  t: 'Ticks',
-  s: 'Seconds',
-  m: 'Minutes',
-  h: 'Hours',
-  d: 'Days',
-  'end-time': 'End Time',
-};
+export type LocalizeFn = (text: string, values?: Record<string, unknown>) => string;
+
+/** Localised duration unit labels. Call with provider `localize` so language switches update. */
+export function getDurationUnitLabels(localize: LocalizeFn): Record<DurationSelectUnit, string> {
+  return {
+    t: localize('Ticks'),
+    s: localize('Seconds'),
+    m: localize('Minutes'),
+    h: localize('Hours'),
+    d: localize('Days'),
+    'end-time': localize('End Time'),
+  };
+}
 
 function parseDurationToSeconds(durationStr: string): number {
   const num = parseInt(durationStr, 10);
@@ -49,7 +54,10 @@ function parseDurationToSeconds(durationStr: string): number {
   }
 }
 
-export function getDurationOptions(contracts: ContractInfo[]): DurationOption[] {
+export function getDurationOptions(
+  contracts: ContractInfo[],
+  labels: Record<DurationSelectUnit, string> = getDurationUnitLabels((text) => text)
+): DurationOption[] {
   const optMap = new Map<DurationSelectUnit, DurationOption>();
 
   for (const contract of contracts) {
@@ -59,7 +67,7 @@ export function getDurationOptions(contracts: ContractInfo[]): DurationOption[] 
 
     if (expiryType === 'tick') {
       if (!optMap.has('t')) {
-        optMap.set('t', { unit: 't', label: DURATION_LABELS.t, min: parseInt(minStr, 10), max: parseInt(maxStr, 10) });
+        optMap.set('t', { unit: 't', label: labels.t, min: parseInt(minStr, 10), max: parseInt(maxStr, 10) });
       }
     } else if (expiryType === 'intraday') {
       const minSec = parseDurationToSeconds(minStr);
@@ -68,25 +76,25 @@ export function getDurationOptions(contracts: ContractInfo[]): DurationOption[] 
       if (maxSec >= 1 && !optMap.has('s')) {
         const sMin = Math.max(1, minSec);
         const sMax = Math.min(59, maxSec);
-        if (sMin <= sMax) optMap.set('s', { unit: 's', label: DURATION_LABELS.s, min: sMin, max: sMax });
+        if (sMin <= sMax) optMap.set('s', { unit: 's', label: labels.s, min: sMin, max: sMax });
       }
 
       if (maxSec >= 60 && !optMap.has('m')) {
         const mMin = Math.max(1, Math.ceil(minSec / 60));
         const mMax = Math.floor(maxSec / 60);
-        if (mMin <= mMax) optMap.set('m', { unit: 'm', label: DURATION_LABELS.m, min: mMin, max: mMax });
+        if (mMin <= mMax) optMap.set('m', { unit: 'm', label: labels.m, min: mMin, max: mMax });
       }
 
       if (maxSec >= 3600 && !optMap.has('h')) {
         const hMin = Math.max(1, Math.ceil(minSec / 3600));
         const hMax = Math.floor(maxSec / 3600);
-        if (hMin <= hMax) optMap.set('h', { unit: 'h', label: DURATION_LABELS.h, min: hMin, max: hMax });
+        if (hMin <= hMax) optMap.set('h', { unit: 'h', label: labels.h, min: hMin, max: hMax });
       }
     } else if (expiryType === 'daily') {
       const dMin = parseInt(minStr, 10);
       const dMax = parseInt(maxStr, 10);
-      if (!optMap.has('d')) optMap.set('d', { unit: 'd', label: DURATION_LABELS.d, min: dMin, max: dMax });
-      if (!optMap.has('end-time')) optMap.set('end-time', { unit: 'end-time', label: DURATION_LABELS['end-time'], min: dMin, max: dMax });
+      if (!optMap.has('d')) optMap.set('d', { unit: 'd', label: labels.d, min: dMin, max: dMax });
+      if (!optMap.has('end-time')) optMap.set('end-time', { unit: 'end-time', label: labels['end-time'], min: dMin, max: dMax });
     }
   }
 

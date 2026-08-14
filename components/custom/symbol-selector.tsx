@@ -13,6 +13,7 @@ import {
 import type { ActiveSymbol } from '@deriv/core';
 import { getSubmarketDisplayName } from '@/lib/active-symbols-display-names';
 import { cn } from '@/lib/utils';
+import { useAppTranslations } from '@/components/custom/i18n-provider';
 
 interface SymbolSelectorProps {
   symbols: ActiveSymbol[];
@@ -83,6 +84,7 @@ export function SymbolSelector({
   prices,
   pipSize,
 }: SymbolSelectorProps) {
+  const { localize } = useAppTranslations();
   const grouped = useMemo(() => groupBySubmarket(symbols), [symbols]);
   const movement = useMemo(
     () => computeMovement(prices, pipSize),
@@ -98,7 +100,7 @@ export function SymbolSelector({
           `[&>span]:line-clamp-1` rule can't collapse the stacked layout. */}
       <SelectTrigger className={cn('w-full', movement ? 'h-auto py-1.5' : undefined)}>
         <div className="flex min-w-0 flex-col items-start gap-0.5 text-left">
-          <SelectValue placeholder="Select a symbol" />
+          <SelectValue placeholder={localize('Select a symbol')} />
           {movement && (
             <span
               className={cn(

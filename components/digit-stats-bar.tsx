@@ -1,5 +1,6 @@
 'use client';
 
+import { Localize } from '@deriv-com/translations';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type { DigitStats } from '../lib/types';
@@ -21,7 +22,7 @@ export function DigitStatsBar({
   return (
     <div className="h-full flex flex-col min-h-0">
       <span className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
-        Last digit prediction
+        <Localize i18n_default_text="Last digit prediction" />
       </span>
       <div className="flex-1 flex items-center min-h-0">
         <div className="grid grid-cols-5 gap-1.5 sm:gap-3 place-items-center w-full">

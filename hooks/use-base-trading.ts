@@ -4,6 +4,7 @@ import { useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useActiveSymbols, useTicks } from '@deriv/core';
 import type { DerivWS, ActiveSymbol, Tick, DurationLimits, ContractInfo } from '@deriv/core';
+import { useAppTranslations } from '@/components/custom/i18n-provider';
 import { useOpenPositions, type OpenPosition } from './use-open-positions';
 import { useClosedPositions, type ClosedPosition } from './use-closed-positions';
 import { useSellContract } from './use-sell-contract';
@@ -61,6 +62,8 @@ export function useBaseTrading({
   onAuthWSFailed,
   contractTypes,
 }: UseBaseTradingParams): UseBaseTradingReturn {
+  const { localize } = useAppTranslations();
+
   // When the authenticated WS exhausts all reconnect attempts, fall back to
   // the public WS by triggering logout.
   useEffect(() => {
@@ -91,11 +94,12 @@ export function useBaseTrading({
       const msgType = data.msg_type as string | undefined;
       if (msgType === 'buy' || msgType === 'sell') return;
       const err = data.error as Record<string, string>;
-      toast.error('Error', {
-        description: err.message ?? 'Unexpected error occurred. Please try again.',
+      toast.error(localize('Error'), {
+        // API message when present; app-authored fallback otherwise.
+        description: err.message ?? localize('Unexpected error occurred. Please try again.'),
       });
     });
-  }, [ws, isConnected]);
+  }, [ws, isConnected, localize]);
 
   const { positions: openPositions } = useOpenPositions(ws, isConnected, isAuthenticated);
 

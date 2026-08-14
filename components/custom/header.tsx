@@ -1,9 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { Localize } from '@deriv-com/translations';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { LANGUAGE_LOCALES } from '@/lib/i18n';
+import { useAppTranslations } from '@/components/custom/i18n-provider';
+import { LanguageSwitcher } from '@/components/custom/language-switcher';
 import type { AuthState, DerivAccount } from '@deriv/core';
 
 interface HeaderProps {
@@ -31,8 +35,11 @@ interface HeaderProps {
   actions?: React.ReactNode;
 }
 
-function formatBalance(balance: string): string {
-  return Number(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function formatBalance(balance: string, locale: string): string {
+  return Number(balance).toLocaleString(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 function AccountLabel({ type }: { type: 'demo' | 'real' }) {
@@ -43,7 +50,11 @@ function AccountLabel({ type }: { type: 'demo' | 'real' }) {
         type === 'demo' ? 'text-orange-500' : 'text-emerald-600'
       )}
     >
-      {type === 'demo' ? 'Demo account' : 'Real account'}
+      {type === 'demo' ? (
+        <Localize i18n_default_text="Demo account" />
+      ) : (
+        <Localize i18n_default_text="Real account" />
+      )}
     </span>
   );
 }
@@ -71,6 +82,8 @@ export function Header({
   showAppName,
   actions,
 }: HeaderProps) {
+  const { currentLang, localize } = useAppTranslations();
+  const numberLocale = LANGUAGE_LOCALES[currentLang];
   const [logoError, setLogoError] = useState(false);
   const resolvedName = resolveHeaderAppName(appName);
   const shouldShowName = resolveShowAppName(showAppName);
@@ -90,7 +103,7 @@ export function Header({
           // eslint-disable-next-line @next/next/no-img-element -- next/image is avoided here intentionally: it errors in the optimizer when /logo.png is absent locally; a plain img with onError gives the same silent fallback behaviour
           <img
             src={logoSrc}
-            alt="App Logo"
+            alt={localize('App Logo')}
             className="h-8 w-auto object-contain"
             onError={() => setLogoError(true)}
           />
@@ -103,6 +116,7 @@ export function Header({
       </div>
       <div className="flex items-center gap-3">
         {actions}
+        <LanguageSwitcher />
         {isAuthenticated && activeAccount && (
           <Popover open={accountSwitcherOpen} onOpenChange={setAccountSwitcherOpen}>
             <PopoverTrigger asChild>
@@ -110,7 +124,7 @@ export function Header({
                 <div className="text-left">
                   <AccountLabel type={activeAccount.account_type} />
                   <p className="text-base font-bold text-foreground">
-                    {formatBalance(activeAccount.balance)} {activeAccount.currency}
+                    {formatBalance(activeAccount.balance, numberLocale)} {activeAccount.currency}
                   </p>
                 </div>
                 <svg
@@ -127,7 +141,7 @@ export function Header({
                 </svg>
               </button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-64 p-2">
+            <PopoverContent align="end" className="z-[100] w-64 p-2">
               <div className="space-y-1">
                 {accounts.map((account) => (
                   <button
@@ -145,7 +159,7 @@ export function Header({
                   >
                     <AccountLabel type={account.account_type} />
                     <p className="text-base font-bold text-foreground">
-                      {formatBalance(account.balance)} {account.currency}
+                      {formatBalance(account.balance, numberLocale)} {account.currency}
                     </p>
                   </button>
                 ))}
@@ -155,16 +169,20 @@ export function Header({
         )}
         {isAuthenticated ? (
           <Button variant="outline" onClick={onLogout}>
-            Log out
+            <Localize i18n_default_text="Log out" />
           </Button>
         ) : (
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={onLogin} disabled={isAuthenticating}>
-              {isAuthenticating ? 'Logging in...' : 'Log in'}
+              {isAuthenticating ? (
+                <Localize i18n_default_text="Logging in..." />
+              ) : (
+                <Localize i18n_default_text="Log in" />
+              )}
             </Button>
             {onSignUp && (
               <Button size="sm" onClick={onSignUp} disabled={isAuthenticating}>
-                Sign up
+                <Localize i18n_default_text="Sign up" />
               </Button>
             )}
           </div>

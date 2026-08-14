@@ -3,11 +3,13 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { Localize } from '@deriv-com/translations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useAppTranslations } from '@/components/custom/i18n-provider';
 import type {
   ContractMode,
   TradeType,
@@ -37,35 +39,42 @@ interface TradeControlsProps {
   isAuthenticated?: boolean;
 }
 
-const CONTRACT_MODE_OPTIONS: Record<TradeType, { value: ContractMode; label: string }[]> = {
-  'matches-differs': [
-    { value: 'DIGITMATCH', label: 'Matches' },
-    { value: 'DIGITDIFF', label: 'Differs' },
-  ],
-  'over-under': [
-    { value: 'DIGITOVER', label: 'Over' },
-    { value: 'DIGITUNDER', label: 'Under' },
-  ],
-  'even-odd': [
-    { value: 'DIGITEVEN', label: 'Even' },
-    { value: 'DIGITODD', label: 'Odd' },
-  ],
-};
+function getContractModeOptions(
+  localize: (text: string) => string
+): Record<TradeType, { value: ContractMode; label: string }[]> {
+  return {
+    'matches-differs': [
+      { value: 'DIGITMATCH', label: localize('Matches') },
+      { value: 'DIGITDIFF', label: localize('Differs') },
+    ],
+    'over-under': [
+      { value: 'DIGITOVER', label: localize('Over') },
+      { value: 'DIGITUNDER', label: localize('Under') },
+    ],
+    'even-odd': [
+      { value: 'DIGITEVEN', label: localize('Even') },
+      { value: 'DIGITODD', label: localize('Odd') },
+    ],
+  };
+}
 
-function getPredictionText(contractMode: ContractMode): string {
+function getPredictionText(
+  contractMode: ContractMode,
+  localize: (text: string) => string
+): string {
   switch (contractMode) {
     case 'DIGITMATCH':
-      return 'match';
+      return localize('match');
     case 'DIGITDIFF':
-      return 'differ from';
+      return localize('differ from');
     case 'DIGITOVER':
-      return 'be over';
+      return localize('be over');
     case 'DIGITUNDER':
-      return 'be under';
+      return localize('be under');
     case 'DIGITEVEN':
-      return 'be even';
+      return localize('be even');
     case 'DIGITODD':
-      return 'be odd';
+      return localize('be odd');
   }
 }
 
@@ -93,23 +102,32 @@ export function TradeControls({
   onClearBuyResult,
   isAuthenticated,
 }: TradeControlsProps) {
+  const { localize } = useAppTranslations();
+
   useEffect(() => {
     if (buyError) {
-      toast.error('Purchase Failed', { description: buyError });
+      toast.error(localize('Purchase Failed'), { description: buyError });
       onClearBuyResult();
     }
-  }, [buyError, onClearBuyResult]);
+  }, [buyError, onClearBuyResult, localize]);
 
   useEffect(() => {
     if (buyResult) {
-      toast.success('Contract Purchased', {
-        description: `Buy price: ${buyResult.buyPrice.toFixed(2)} USD | Payout: ${buyResult.payout.toFixed(2)} USD | Balance: ${buyResult.balanceAfter.toFixed(2)} USD`,
+      toast.success(localize('Contract Purchased'), {
+        description: localize(
+          'Buy price: {{buyPrice}} USD | Payout: {{payout}} USD | Balance: {{balance}} USD',
+          {
+            buyPrice: buyResult.buyPrice.toFixed(2),
+            payout: buyResult.payout.toFixed(2),
+            balance: buyResult.balanceAfter.toFixed(2),
+          }
+        ),
       });
       onClearBuyResult();
     }
-  }, [buyResult, onClearBuyResult]);
+  }, [buyResult, onClearBuyResult, localize]);
 
-  const modeOptions = CONTRACT_MODE_OPTIONS[tradeType];
+  const modeOptions = getContractModeOptions(localize)[tradeType];
 
   return (
     <div className="space-y-2 sm:space-y-4">
@@ -135,7 +153,7 @@ export function TradeControls({
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="stake" className="text-xs text-muted-foreground">
-            Stake
+            <Localize i18n_default_text="Stake" />
           </Label>
           <Input
             id="stake"
@@ -152,7 +170,7 @@ export function TradeControls({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="duration" className="text-xs text-muted-foreground">
-            Duration
+            <Localize i18n_default_text="Duration" />
           </Label>
           <Input
             id="duration"
@@ -165,16 +183,20 @@ export function TradeControls({
             min={durationLimits.min}
             max={durationLimits.max}
             step={1}
-            labelRight="Ticks"
+            labelRight={localize('Ticks')}
           />
         </div>
       </div>
 
       <div className="rounded-lg border border-border p-2 sm:p-3 bg-muted/20 space-y-1.5 sm:space-y-2">
-        <p className="text-[11px] sm:text-xs text-muted-foreground mb-0 sm:mb-1">Prediction</p>
+        <p className="text-[11px] sm:text-xs text-muted-foreground mb-0 sm:mb-1">
+          <Localize i18n_default_text="Prediction" />
+        </p>
         <p className="text-xs sm:text-sm font-medium">
-          Last digit of the price will{' '}
-          <span className="text-primary font-bold">{getPredictionText(contractMode)}</span>
+          <Localize i18n_default_text="Last digit of the price will" />{' '}
+          <span className="text-primary font-bold">
+            {getPredictionText(contractMode, localize)}
+          </span>
           {showDigitInPrediction(contractMode) && (
             <>
               {' '}
@@ -186,7 +208,9 @@ export function TradeControls({
         </p>
         {(proposal || isProposalLoading) && (
           <div className="flex items-center justify-between pt-1 border-t border-border">
-            <span className="text-xs text-muted-foreground">Payout</span>
+            <span className="text-xs text-muted-foreground">
+              <Localize i18n_default_text="Payout" />
+            </span>
             {isProposalLoading ? (
               <Skeleton className="h-4 w-24" />
             ) : (
@@ -206,16 +230,20 @@ export function TradeControls({
           onClick={onBuy}
         >
           {isBuying
-            ? 'Purchasing...'
+            ? localize('Purchasing...')
             : proposal
-              ? `Buy @ ${proposal.askPrice.toFixed(2)} USD`
-              : 'Buy Contract'}
+              ? localize('Buy @ {{price}} USD', {
+                  price: proposal.askPrice.toFixed(2),
+                })
+              : localize('Buy Contract')}
         </Button>
       </div>
 
       {isAuthenticated && (
         <Button asChild variant="ghost" className="w-full text-sm text-muted-foreground hover:text-foreground">
-          <Link href="/reports">View your positions →</Link>
+          <Link href="/reports">
+            <Localize i18n_default_text="View your positions →" />
+          </Link>
         </Button>
       )}
     </div>

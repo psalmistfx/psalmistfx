@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import type { DerivWS } from '@deriv/core';
+import { useAppTranslations } from '@/components/custom/i18n-provider';
 
 interface SellResponse {
   sell: {
@@ -24,6 +25,7 @@ export function useSellContract(
   ws: DerivWS | null,
   isConnected: boolean
 ): UseSellContractReturn {
+  const { localize } = useAppTranslations();
   const [sellingId, setSellingId] = useState<number | null>(null);
   const [sellError, setSellError] = useState<string | null>(null);
 
@@ -42,12 +44,13 @@ export function useSellContract(
           price: bidPrice,
         });
       } catch (err) {
-        setSellError(err instanceof Error ? err.message : 'Sell failed');
+        // Prefer API/Error message; localise only the app-authored fallback.
+        setSellError(err instanceof Error ? err.message : localize('Sell failed'));
       } finally {
         setSellingId(null);
       }
     },
-    [ws, isConnected]
+    [ws, isConnected, localize]
   );
 
   return { sellContract, sellingId, sellError, clearSellError };

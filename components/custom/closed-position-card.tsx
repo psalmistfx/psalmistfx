@@ -1,5 +1,6 @@
 'use client';
 
+import { Localize } from '@deriv-com/translations';
 import { cn } from '@/lib/utils';
 import type { ClosedPosition } from '@/hooks/use-closed-positions';
 import { getSymbolDisplayName } from '@/lib/active-symbols-display-names';
@@ -69,7 +70,7 @@ export function ClosedPositionCard({
       <div className="grid grid-cols-2 gap-x-4 gap-y-3">
         <div>
           <p className="text-xs text-muted-foreground mb-0.5">
-            Total profit/loss:
+            <Localize i18n_default_text="Total profit/loss:" />
           </p>
           <p
             className={cn(
@@ -82,19 +83,25 @@ export function ClosedPositionCard({
           </p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Sell price:</p>
+          <p className="text-xs text-muted-foreground mb-0.5">
+            <Localize i18n_default_text="Sell price:" />
+          </p>
           <p className="text-base font-bold text-foreground">
             {pos.sell_price.toFixed(2)}
           </p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Stake:</p>
+          <p className="text-xs text-muted-foreground mb-0.5">
+            <Localize i18n_default_text="Stake:" />
+          </p>
           <p className="text-base font-bold text-foreground">
             {pos.buy_price.toFixed(2)}
           </p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Payout:</p>
+          <p className="text-xs text-muted-foreground mb-0.5">
+            <Localize i18n_default_text="Payout:" />
+          </p>
           <p className="text-base font-bold text-foreground">
             {pos.payout.toFixed(2)}
           </p>

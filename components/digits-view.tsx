@@ -2,11 +2,13 @@
 
 import { useMemo } from 'react';
 import { Ban } from 'lucide-react';
+import { Localize } from '@deriv-com/translations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Footer } from '@/components/custom/footer';
 import { Header } from '@/components/custom/header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useAppTranslations } from '@/components/custom/i18n-provider';
 import { CurrentTickDisplay } from './current-tick-display';
 import { DigitStatsBar } from './digit-stats-bar';
 import { TradeControls } from './trade-controls';
@@ -26,11 +28,15 @@ import type {
 import type { ContractMode, TradeType, DigitStats } from '../lib/types';
 import type { DigitsAppConfig } from '../lib/app-config';
 
-const DIGIT_TRADE_TYPE_OPTIONS: { value: TradeType; label: string }[] = [
-  { value: 'matches-differs', label: 'Matches/Differs' },
-  { value: 'over-under', label: 'Over/Under' },
-  { value: 'even-odd', label: 'Even/Odd' },
-];
+function getDigitTradeTypeOptions(
+  localize: (text: string) => string
+): { value: TradeType; label: string }[] {
+  return [
+    { value: 'matches-differs', label: localize('Matches/Differs') },
+    { value: 'over-under', label: localize('Over/Under') },
+    { value: 'even-odd', label: localize('Even/Odd') },
+  ];
+}
 
 export interface DigitsViewProps {
   // Auth
@@ -145,6 +151,8 @@ export function DigitsView({
   onReorder,
 }: DigitsViewProps) {
   const isMobile = useIsMobile();
+  const { localize } = useAppTranslations();
+  const digitTradeTypeOptions = getDigitTradeTypeOptions(localize);
 
   // In edit mode, login/sign-up/account actions are inert (no OAuth navigation
   // out of the editor) — only the theme toggle stays interactive.
@@ -185,7 +193,9 @@ export function DigitsView({
       <main className="flex flex-col bg-background items-center justify-center px-4 min-h-dvh">
         <Card className="max-w-md w-full">
           <CardHeader>
-            <CardTitle className="text-destructive">Connection Error</CardTitle>
+            <CardTitle className="text-destructive">
+              <Localize i18n_default_text="Connection Error" />
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">{error}</p>
@@ -250,7 +260,7 @@ export function DigitsView({
           <div className="pointer-events-none absolute inset-0 z-[60] opacity-0 ring-2 ring-inset ring-muted-foreground/25 transition-opacity group-hover/hdr:opacity-100">
             <span className="absolute left-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-md bg-background/90 px-2 py-1 text-[11px] font-medium text-muted-foreground shadow-sm ring-1 ring-border">
               <Ban className="h-3.5 w-3.5" />
-              Not editable
+              <Localize i18n_default_text="Not editable" />
             </span>
           </div>
         </div>
@@ -300,7 +310,7 @@ export function DigitsView({
               <div className="shrink-0 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <TradeTypeChips
                   value={tradeType}
-                  options={DIGIT_TRADE_TYPE_OPTIONS}
+                  options={digitTradeTypeOptions}
                   onValueChange={setTradeType}
                 />
               </div>

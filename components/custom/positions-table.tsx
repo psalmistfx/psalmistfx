@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { Localize } from '@deriv-com/translations';
 import {
   Table,
   TableBody,
@@ -14,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { getSymbolDisplayName } from '@/lib/active-symbols-display-names';
+import { useAppTranslations } from '@/components/custom/i18n-provider';
 import { OpenPositionCard } from './open-position-card';
 import { ClosedPositionCard } from './closed-position-card';
 import type { OpenPosition } from '@/hooks/use-open-positions';
@@ -34,11 +36,19 @@ interface PositionsTableProps {
   className?: string;
 }
 
-const VALUE_COL_HEADER: Record<PositionFilter, string> = {
-  open: 'Current Value',
-  closed: 'Sell Price',
-  all: 'Value',
-};
+function getValueColHeader(
+  filter: PositionFilter,
+  localize: (text: string, values?: Record<string, unknown>) => string
+): string {
+  switch (filter) {
+    case 'open':
+      return localize('Current Value');
+    case 'closed':
+      return localize('Sell Price');
+    case 'all':
+      return localize('Value');
+  }
+}
 
 function formatContractType(
   contractType: string,
@@ -59,14 +69,15 @@ export function PositionsTable({
   contractTypeLabels = {},
   className,
 }: PositionsTableProps) {
+  const { localize } = useAppTranslations();
   const [filter, setFilter] = useState<PositionFilter>('open');
 
   useEffect(() => {
     if (sellError) {
-      toast.error('Sell Failed', { description: sellError });
+      toast.error(localize('Sell Failed'), { description: sellError });
       onClearSellError();
     }
-  }, [sellError, onClearSellError]);
+  }, [sellError, onClearSellError, localize]);
 
   const totalCount = openPositions.length + closedPositions.length;
 
@@ -78,15 +89,23 @@ export function PositionsTable({
       {/* Header */}
       <div className="grid grid-cols-3 items-center mb-3">
         <div />
-        <h2 className="text-sm font-semibold text-center">Report</h2>
+        <h2 className="text-sm font-semibold text-center">
+          <Localize i18n_default_text="Report" />
+        </h2>
         <Select value={filter} onValueChange={(value) => setFilter(value as PositionFilter)}>
           <SelectTrigger className="w-28 ml-auto">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="open">Open ({openPositions.length})</SelectItem>
-            <SelectItem value="closed">Closed ({closedPositions.length})</SelectItem>
-            <SelectItem value="all">All ({totalCount})</SelectItem>
+            <SelectItem value="open">
+              {localize('Open ({{count}})', { count: openPositions.length })}
+            </SelectItem>
+            <SelectItem value="closed">
+              {localize('Closed ({{count}})', { count: closedPositions.length })}
+            </SelectItem>
+            <SelectItem value="all">
+              {localize('All ({{count}})', { count: totalCount })}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -96,11 +115,19 @@ export function PositionsTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Type</TableHead>
-              <TableHead>Symbol</TableHead>
-              <TableHead className="text-right">Stake</TableHead>
-              <TableHead className="text-right">{VALUE_COL_HEADER[filter]}</TableHead>
-              <TableHead className="text-right">P&amp;L</TableHead>
+              <TableHead>
+                <Localize i18n_default_text="Type" />
+              </TableHead>
+              <TableHead>
+                <Localize i18n_default_text="Symbol" />
+              </TableHead>
+              <TableHead className="text-right">
+                <Localize i18n_default_text="Stake" />
+              </TableHead>
+              <TableHead className="text-right">{getValueColHeader(filter, localize)}</TableHead>
+              <TableHead className="text-right">
+                <Localize i18n_default_text="P&L" />
+              </TableHead>
               <TableHead />
             </TableRow>
           </TableHeader>
@@ -124,7 +151,7 @@ export function PositionsTable({
             {visibleOpen.length === 0 && visibleClosed.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
-                  No positions
+                  <Localize i18n_default_text="No positions" />
                 </TableCell>
               </TableRow>
             )}
@@ -151,7 +178,9 @@ export function PositionsTable({
           />
         ))}
         {visibleOpen.length === 0 && visibleClosed.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground py-8">No positions</p>
+          <p className="text-center text-sm text-muted-foreground py-8">
+            <Localize i18n_default_text="No positions" />
+          </p>
         )}
       </div>
     </div>
@@ -171,6 +200,7 @@ function OpenPositionRow({
   onSell: (contractId: number, bidPrice: string) => Promise<void>;
   contractTypeLabels: Record<string, string>;
 }) {
+  const { localize } = useAppTranslations();
   const profit = parseFloat(pos.profit);
   const isProfit = profit >= 0;
 
@@ -194,7 +224,7 @@ function OpenPositionRow({
           disabled={isSelling || pos.is_valid_to_sell !== 1}
           onClick={() => onSell(pos.contract_id, pos.bid_price)}
         >
-          {isSelling ? 'Selling...' : 'Sell'}
+          {isSelling ? localize('Selling...') : localize('Sell')}
         </Button>
       </TableCell>
     </TableRow>

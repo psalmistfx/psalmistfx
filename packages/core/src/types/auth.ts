@@ -17,6 +17,12 @@ export interface AuthConfig {
   utmSource?: string;
   /** UTM medium (e.g., 'affiliate') — sign-up attribution only */
   utmMedium?: string;
+  /**
+   * UI language to forward to Deriv login/signup (e.g. 'EN' | 'ES' | 'FR' | 'PT').
+   * Appended as `lang` so the home-app OAuth journey matches the template UI
+   * (deriv-api-v2#559).
+   */
+  lang?: string;
 }
 
 export interface AuthInfo {

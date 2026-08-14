@@ -4,6 +4,7 @@ import { getLogoSrc } from '@/lib/get-logo-src';
 import { inter, FONT_CLASS_MAP } from '@/lib/fonts';
 import { TemplateLayout } from '@/components/custom/template-layout';
 import { LogoSrcProvider } from '@/components/custom/logo-src-provider';
+import { TemplateI18nProvider } from '../lib/i18n/provider';
 import '@/app/globals.css';
 import './globals.css';
 import './custom.css';
@@ -28,9 +29,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body
         className={`${fontClass} bg-background flex min-h-dvh flex-col overflow-hidden max-lg:h-dvh max-lg:overflow-hidden lg:block lg:h-auto lg:min-h-screen lg:overflow-x-hidden lg:overflow-y-auto`}
       >
-        <TemplateLayout>
-          <LogoSrcProvider logoSrc={logoSrc}>{children}</LogoSrcProvider>
-        </TemplateLayout>
+        <TemplateI18nProvider>
+          <TemplateLayout>
+            <LogoSrcProvider logoSrc={logoSrc}>{children}</LogoSrcProvider>
+          </TemplateLayout>
+        </TemplateI18nProvider>
       </body>
     </html>
   );

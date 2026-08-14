@@ -1,5 +1,6 @@
 'use client';
 
+import { Localize } from '@deriv-com/translations';
 import type { Tick } from '../lib/types';
 import type { ActiveSymbol } from '../lib/types';
 
@@ -35,7 +36,9 @@ export function CurrentTickDisplay({
         <span className="text-primary text-2xl sm:text-4xl">{lastDigitStr}</span>
       </div>
       <div className="mt-1 sm:mt-2 inline-flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground">
-        <span>Last Digit:</span>
+        <span>
+          <Localize i18n_default_text="Last Digit:" />
+        </span>
         <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
           {lastDigit}
         </span>

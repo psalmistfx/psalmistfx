@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Localize } from '@deriv-com/translations';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { OpenPosition } from '@/hooks/use-open-positions';
 import { getSymbolDisplayName } from '@/lib/active-symbols-display-names';
+import { useAppTranslations } from '@/components/custom/i18n-provider';
 
 interface OpenPositionCardProps {
   pos: OpenPosition;
@@ -60,6 +62,7 @@ export function OpenPositionCard({
   onSell,
   contractTypeLabels,
 }: OpenPositionCardProps) {
+  const { localize } = useAppTranslations();
   const { label: dirLabel } = getDirectionDisplay(pos.contract_type, contractTypeLabels);
   const profit = parseFloat(pos.profit);
   const isProfit = profit >= 0;
@@ -106,7 +109,9 @@ export function OpenPositionCard({
       {/* Row 4–5: Stats grid */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-3">
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Total profit/loss:</p>
+          <p className="text-xs text-muted-foreground mb-0.5">
+            <Localize i18n_default_text="Total profit/loss:" />
+          </p>
           <p
             className={cn(
               'text-base font-bold flex items-center gap-1',
@@ -121,7 +126,9 @@ export function OpenPositionCard({
           </p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Contract value:</p>
+          <p className="text-xs text-muted-foreground mb-0.5">
+            <Localize i18n_default_text="Contract value:" />
+          </p>
           <p
             className={cn(
               'text-base font-bold flex items-center gap-1',
@@ -133,11 +140,15 @@ export function OpenPositionCard({
           </p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Stake:</p>
+          <p className="text-xs text-muted-foreground mb-0.5">
+            <Localize i18n_default_text="Stake:" />
+          </p>
           <p className="text-base font-bold text-foreground">{buyPrice.toFixed(2)}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Potential payout:</p>
+          <p className="text-xs text-muted-foreground mb-0.5">
+            <Localize i18n_default_text="Potential payout:" />
+          </p>
           <p className="text-base font-bold text-foreground">{payout.toFixed(2)}</p>
         </div>
       </div>
@@ -149,7 +160,7 @@ export function OpenPositionCard({
         disabled={isSelling || pos.is_valid_to_sell !== 1}
         onClick={() => onSell(pos.contract_id, pos.bid_price)}
       >
-        {isSelling ? 'Selling...' : 'Sell'}
+        {isSelling ? localize('Selling...') : localize('Sell')}
       </Button>
     </div>
   );

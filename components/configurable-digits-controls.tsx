@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { GripVertical, LineChart } from 'lucide-react';
 import { toast } from 'sonner';
+import { Localize } from '@deriv-com/translations';
 import { useRearrangeDrag } from '@/hooks/use-rearrange-drag';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +41,7 @@ import {
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { TradeTypeChips } from '@/components/custom/trade-type-chips';
 import { SymbolSelector } from '@/components/custom/symbol-selector';
+import { useAppTranslations } from '@/components/custom/i18n-provider';
 import { getSubmarketDisplayName } from '@/lib/active-symbols-display-names';
 import { cn } from '@/lib/utils';
 import type {
@@ -55,56 +57,68 @@ import type { ContractMode, TradeType, DigitStats } from '../lib/types';
 import type { ControlKey, DigitsAppConfig, StyleVariant } from '../lib/app-config';
 
 /** Human labels shown on each draggable block in rearrange mode. */
-const BLOCK_LABELS: Record<ControlKey, string> = {
-  tradeType: 'Trade type',
-  symbol: 'Symbol picker',
-  tick: 'Current tick',
-  digitStats: 'Digit stats',
-  contractMode: 'Contract mode',
-  stake: 'Stake',
-  duration: 'Duration',
-  prediction: 'Prediction',
-  buy: 'Buy button',
-};
-
-const DIGIT_TRADE_TYPE_OPTIONS: { value: TradeType; label: string }[] = [
-  { value: 'matches-differs', label: 'Matches/Differs' },
-  { value: 'over-under', label: 'Over/Under' },
-  { value: 'even-odd', label: 'Even/Odd' },
-];
-
-const CONTRACT_MODE_OPTIONS: Record<TradeType, { value: ContractMode; label: string }[]> = {
-  'matches-differs': [
-    { value: 'DIGITMATCH', label: 'Matches' },
-    { value: 'DIGITDIFF', label: 'Differs' },
-  ],
-  'over-under': [
-    { value: 'DIGITOVER', label: 'Over' },
-    { value: 'DIGITUNDER', label: 'Under' },
-  ],
-  'even-odd': [
-    { value: 'DIGITEVEN', label: 'Even' },
-    { value: 'DIGITODD', label: 'Odd' },
-  ],
-};
-
-function getPredictionText(contractMode: ContractMode): string {
-  switch (contractMode) {
-    case 'DIGITMATCH':
-      return 'match';
-    case 'DIGITDIFF':
-      return 'differ from';
-    case 'DIGITOVER':
-      return 'be over';
-    case 'DIGITUNDER':
-      return 'be under';
-    case 'DIGITEVEN':
-      return 'be even';
-    case 'DIGITODD':
-      return 'be odd';
-  }
+function getBlockLabels(localize: (text: string) => string): Record<ControlKey, string> {
+  return {
+    tradeType: localize('Trade type'),
+    symbol: localize('Symbol picker'),
+    tick: localize('Current tick'),
+    digitStats: localize('Digit stats'),
+    contractMode: localize('Contract mode'),
+    stake: localize('Stake'),
+    duration: localize('Duration'),
+    prediction: localize('Prediction'),
+    buy: localize('Buy button'),
+  };
 }
 
+function getDigitTradeTypeOptions(
+  localize: (text: string) => string
+): { value: TradeType; label: string }[] {
+  return [
+    { value: 'matches-differs', label: localize('Matches/Differs') },
+    { value: 'over-under', label: localize('Over/Under') },
+    { value: 'even-odd', label: localize('Even/Odd') },
+  ];
+}
+
+function getContractModeOptions(
+  localize: (text: string) => string
+): Record<TradeType, { value: ContractMode; label: string }[]> {
+  return {
+    'matches-differs': [
+      { value: 'DIGITMATCH', label: localize('Matches') },
+      { value: 'DIGITDIFF', label: localize('Differs') },
+    ],
+    'over-under': [
+      { value: 'DIGITOVER', label: localize('Over') },
+      { value: 'DIGITUNDER', label: localize('Under') },
+    ],
+    'even-odd': [
+      { value: 'DIGITEVEN', label: localize('Even') },
+      { value: 'DIGITODD', label: localize('Odd') },
+    ],
+  };
+}
+
+function getPredictionText(
+  contractMode: ContractMode,
+  localize: (text: string) => string
+): string {
+  switch (contractMode) {
+    case 'DIGITMATCH':
+      return localize('match');
+    case 'DIGITDIFF':
+      return localize('differ from');
+    case 'DIGITOVER':
+      return localize('be over');
+    case 'DIGITUNDER':
+      return localize('be under');
+    case 'DIGITEVEN':
+      return localize('be even');
+    case 'DIGITODD':
+      return localize('be odd');
+  }
+}
 function showDigitInPrediction(contractMode: ContractMode): boolean {
   return contractMode !== 'DIGITEVEN' && contractMode !== 'DIGITODD';
 }
@@ -192,6 +206,11 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
     onReorder,
   } = props;
 
+  const { localize } = useAppTranslations();
+  const blockLabels = getBlockLabels(localize);
+  const digitTradeTypeOptions = getDigitTradeTypeOptions(localize);
+  const contractModeOptions = getContractModeOptions(localize);
+
   const rearrange = useRearrangeDrag<ControlKey>(config.order, (next) => onReorder?.(next));
 
   // Flash the draggable blocks once — the first time the layout is unlocked in
@@ -213,18 +232,25 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
 
   useEffect(() => {
     if (buyError) {
-      toast.error('Purchase Failed', { description: buyError });
+      toast.error(localize('Purchase Failed'), { description: buyError });
       onClearBuyResult();
     }
-  }, [buyError, onClearBuyResult]);
+  }, [buyError, onClearBuyResult, localize]);
   useEffect(() => {
     if (buyResult) {
-      toast.success('Contract Purchased', {
-        description: `Buy price: ${buyResult.buyPrice.toFixed(2)} USD | Payout: ${buyResult.payout.toFixed(2)} USD | Balance: ${buyResult.balanceAfter.toFixed(2)} USD`,
+      toast.success(localize('Contract Purchased'), {
+        description: localize(
+          'Buy price: {{buyPrice}} USD | Payout: {{payout}} USD | Balance: {{balance}} USD',
+          {
+            buyPrice: buyResult.buyPrice.toFixed(2),
+            payout: buyResult.payout.toFixed(2),
+            balance: buyResult.balanceAfter.toFixed(2),
+          }
+        ),
       });
       onClearBuyResult();
     }
-  }, [buyResult, onClearBuyResult]);
+  }, [buyResult, onClearBuyResult, localize]);
 
   // ── Trade type (3 styles) ───────────────────────────────────────────────
   // Real control = TradeTypeChips. Each variant calls onTradeTypeChange (which
@@ -236,7 +262,7 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
         <div className="overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <TradeTypeChips
             value={tradeType}
-            options={DIGIT_TRADE_TYPE_OPTIONS}
+            options={digitTradeTypeOptions}
             onValueChange={onTradeTypeChange}
           />
         </div>
@@ -247,12 +273,12 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
           type="single"
           value={tradeType}
           onValueChange={(value) => {
-            const opt = DIGIT_TRADE_TYPE_OPTIONS.find((option) => option.value === value);
+            const opt = digitTradeTypeOptions.find((option) => option.value === value);
             if (opt) onTradeTypeChange(opt.value);
           }}
           className="w-full gap-0 rounded-md bg-muted p-1"
         >
-          {DIGIT_TRADE_TYPE_OPTIONS.map((opt) => (
+          {digitTradeTypeOptions.map((opt) => (
             <ToggleGroupItem
               key={opt.value}
               value={opt.value}
@@ -268,7 +294,7 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
         <Select
           value={tradeType}
           onValueChange={(value) => {
-            const opt = DIGIT_TRADE_TYPE_OPTIONS.find((option) => option.value === value);
+            const opt = digitTradeTypeOptions.find((option) => option.value === value);
             if (opt) onTradeTypeChange(opt.value);
           }}
         >
@@ -276,7 +302,7 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {DIGIT_TRADE_TYPE_OPTIONS.map((opt) => (
+            {digitTradeTypeOptions.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>
@@ -307,7 +333,7 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
           onValueChange={selectSymbol}
         >
           <SelectTrigger className="h-8 w-fit gap-1 rounded-full px-3 text-xs">
-            <SelectValue placeholder="Symbol" />
+            <SelectValue placeholder={localize('Symbol')} />
           </SelectTrigger>
           <SelectContent>
             {renderSymbolGroups(symbols)}
@@ -323,7 +349,7 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
           <SelectTrigger className="h-11 w-full">
             <span className="flex items-center gap-2">
               <LineChart className="h-4 w-4 shrink-0 text-primary" />
-              <SelectValue placeholder="Select a symbol" />
+              <SelectValue placeholder={localize('Select a symbol')} />
             </span>
           </SelectTrigger>
           <SelectContent>
@@ -408,7 +434,9 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
       // Compact grid of 0–9 selectable <Button>s, each with its percentage.
       b: () => (
         <div className="space-y-1.5">
-          <span className="text-xs text-muted-foreground">Last digit prediction</span>
+          <span className="text-xs text-muted-foreground">
+            <Localize i18n_default_text="Last digit prediction" />
+          </span>
           <div className="grid grid-cols-5 gap-1.5">
             {digitStats.percentages.map((pct, digit) => {
               const isSelected = digit === selectedDigit;
@@ -448,7 +476,9 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
       // Compact list — one selectable row per digit with its percentage.
       c: () => (
         <div className="space-y-1.5">
-          <span className="text-xs text-muted-foreground">Last digit prediction</span>
+          <span className="text-xs text-muted-foreground">
+            <Localize i18n_default_text="Last digit prediction" />
+          </span>
           <div className="flex flex-col gap-1">
             {digitStats.percentages.map((pct, digit) => {
               const isSelected = digit === selectedDigit;
@@ -487,7 +517,7 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
   // ── Contract mode (3 styles) ────────────────────────────────────────────
   // Real control = ToggleGroup. Every variant keeps onContractModeChange.
   const renderContractMode = () => {
-    const modeOptions = CONTRACT_MODE_OPTIONS[tradeType];
+    const modeOptions = contractModeOptions[tradeType];
 
     const variants: Record<StyleVariant, () => React.ReactNode> = {
       // a — segmented pill (current)
@@ -576,14 +606,18 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
       // a — plain <Input> (current)
       a: () => (
         <div className="space-y-1.5">
-          <Label htmlFor="stake" className="text-xs text-muted-foreground">Stake</Label>
+          <Label htmlFor="stake" className="text-xs text-muted-foreground">
+            <Localize i18n_default_text="Stake" />
+          </Label>
           {stakeInput()}
         </div>
       ),
       // <Input> flanked by −/+ <Button> steppers.
       b: () => (
         <div className="space-y-1.5">
-          <Label htmlFor="stake" className="text-xs text-muted-foreground">Stake</Label>
+          <Label htmlFor="stake" className="text-xs text-muted-foreground">
+            <Localize i18n_default_text="Stake" />
+          </Label>
           <div className="flex w-full items-center gap-2">
             <Button variant="outline" size="icon" className="shrink-0" onClick={() => setStakeNum(current - 1)}>−</Button>
             <div className="flex-1">{stakeInput('text-center')}</div>
@@ -594,7 +628,9 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
       // Preset chip <Button>s + <Input>.
       c: () => (
         <div className="space-y-1.5">
-          <Label htmlFor="stake" className="text-xs text-muted-foreground">Stake</Label>
+          <Label htmlFor="stake" className="text-xs text-muted-foreground">
+            <Localize i18n_default_text="Stake" />
+          </Label>
           <div className="flex gap-2">
             {['5', '10', '25', '50'].map((preset) => (
               <Button
@@ -632,7 +668,7 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
         min={durationLimits.min}
         max={durationLimits.max}
         step={1}
-        labelRight="Ticks"
+        labelRight={localize('Ticks')}
         className={extraClass}
       />
     );
@@ -641,14 +677,18 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
       // a — plain <Input> (current)
       a: () => (
         <div className="space-y-1.5">
-          <Label htmlFor="duration" className="text-xs text-muted-foreground">Duration</Label>
+          <Label htmlFor="duration" className="text-xs text-muted-foreground">
+            <Localize i18n_default_text="Duration" />
+          </Label>
           {durationInput()}
         </div>
       ),
       // <Input> flanked by −/+ <Button> steppers.
       b: () => (
         <div className="space-y-1.5">
-          <Label htmlFor="duration" className="text-xs text-muted-foreground">Duration</Label>
+          <Label htmlFor="duration" className="text-xs text-muted-foreground">
+            <Localize i18n_default_text="Duration" />
+          </Label>
           <div className="flex w-full items-center gap-2">
             <Button variant="outline" size="icon" className="shrink-0" onClick={() => setDurationNum(duration - 1)}>−</Button>
             <div className="flex-1">{durationInput('text-center')}</div>
@@ -659,7 +699,9 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
       // Preset chip <Button>s (1/5/10) + <Input>.
       c: () => (
         <div className="space-y-1.5">
-          <Label htmlFor="duration" className="text-xs text-muted-foreground">Duration</Label>
+          <Label htmlFor="duration" className="text-xs text-muted-foreground">
+            <Localize i18n_default_text="Duration" />
+          </Label>
           <div className="flex gap-2">
             {[1, 5, 10].map((preset) => (
               <Button
@@ -683,7 +725,7 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
   // ── Prediction + payout (3 styles) ──────────────────────────────────────
   // Real control = the bordered prediction box. Same data in every variant.
   const renderPrediction = () => {
-    const predictionText = getPredictionText(contractMode);
+    const predictionText = getPredictionText(contractMode, localize);
     const showDigit = showDigitInPrediction(contractMode);
     const payoutEl =
       proposal || isProposalLoading ? (
@@ -698,9 +740,11 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
       // a — bordered box (current)
       a: () => (
         <div className="space-y-1.5 rounded-lg border border-border bg-muted/20 p-2 sm:space-y-2 sm:p-3">
-          <p className="mb-0 text-[11px] text-muted-foreground sm:mb-1 sm:text-xs">Prediction</p>
+          <p className="mb-0 text-[11px] text-muted-foreground sm:mb-1 sm:text-xs">
+            <Localize i18n_default_text="Prediction" />
+          </p>
           <p className="text-xs font-medium sm:text-sm">
-            Last digit of the price will{' '}
+            <Localize i18n_default_text="Last digit of the price will" />{' '}
             <span className="text-primary font-bold">{predictionText}</span>
             {showDigit && (
               <>
@@ -713,7 +757,9 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
           </p>
           {(proposal || isProposalLoading) && (
             <div className="flex items-center justify-between border-t border-border pt-1">
-              <span className="text-xs text-muted-foreground">Payout</span>
+              <span className="text-xs text-muted-foreground">
+                <Localize i18n_default_text="Payout" />
+              </span>
               {payoutEl}
             </div>
           )}
@@ -723,7 +769,8 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
       b: () => (
         <div className="flex items-center justify-between gap-2 text-xs sm:text-sm">
           <span className="font-medium">
-            Last digit will <span className="text-primary font-bold">{predictionText}</span>
+            <Localize i18n_default_text="Last digit will" />{' '}
+            <span className="text-primary font-bold">{predictionText}</span>
             {showDigit && (
               <>
                 {' '}
@@ -740,7 +787,8 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
       c: () => (
         <div className="flex w-full items-center justify-between gap-2 rounded-md bg-muted/40 px-3 py-2 text-xs">
           <span className="font-medium">
-            Will <span className="text-primary font-bold">{predictionText}</span>
+            <Localize i18n_default_text="Will" />{' '}
+            <span className="text-primary font-bold">{predictionText}</span>
             {showDigit && (
               <>
                 {' '}
@@ -750,7 +798,11 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
               </>
             )}
           </span>
-          {payoutEl ?? <span className="text-muted-foreground">Payout</span>}
+          {payoutEl ?? (
+            <span className="text-muted-foreground">
+              <Localize i18n_default_text="Payout" />
+            </span>
+          )}
         </div>
       ),
     };
@@ -762,10 +814,10 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
   const renderBuy = () => {
     const disabled = !isConnected || !proposal || isBuying;
     const label = isBuying
-      ? 'Purchasing...'
+      ? localize('Purchasing...')
       : proposal
-        ? `Buy @ ${proposal.askPrice.toFixed(2)} USD`
-        : 'Buy Contract';
+        ? localize('Buy @ {{price}} USD', { price: proposal.askPrice.toFixed(2) })
+        : localize('Buy Contract');
 
     const variants: Record<StyleVariant, () => React.ReactNode> = {
       // a — pill (current)
@@ -845,7 +897,7 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
                 )}
               >
                 <GripVertical className="h-3.5 w-3.5" />
-                {BLOCK_LABELS[key]}
+                {blockLabels[key]}
               </div>
               <div className="absolute inset-0 z-[60]" />
               <div className="pointer-events-none select-none px-2 pb-2 pt-9">{content}</div>
@@ -900,7 +952,9 @@ export function ConfigurableDigitsControls(props: ConfigurableDigitsControlsProp
       })}
       {isAuthenticated && (
         <Button asChild variant="ghost" className="w-full text-sm text-muted-foreground hover:text-foreground">
-          <Link href="/reports">View your positions →</Link>
+          <Link href="/reports">
+            <Localize i18n_default_text="View your positions →" />
+          </Link>
         </Button>
       )}
     </div>

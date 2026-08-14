@@ -21,14 +21,23 @@ import {
   resolveReferralViaProxy,
 } from '@deriv/core';
 import type { AuthInfo, DerivAccount, AuthState, AuthConfig } from '@deriv/core';
+import { useAppTranslations } from '@/components/custom/i18n-provider';
+import { readStoredLanguage } from '@/lib/i18n';
 
-function getAuthConfig(): AuthConfig {
+function getAuthConfig(lang?: string): AuthConfig {
   const config: AuthConfig = {
     clientId: process.env.NEXT_PUBLIC_DERIV_APP_ID ?? '',
     redirectUri:
       process.env.NEXT_PUBLIC_DERIV_REDIRECT_URI ??
       (typeof window !== 'undefined' ? window.location.origin : ''),
   };
+
+  // Prefer the live UI language; fall back to the namespaced storage key so
+  // login/sign-up still forward `lang` if called outside the provider tree.
+  const resolvedLang = lang ?? readStoredLanguage();
+  if (resolvedLang) {
+    config.lang = resolvedLang;
+  }
 
   // Convert comma-separated scopes to space-separated (OAuth spec)
   const scopesEnv = process.env.NEXT_PUBLIC_DERIV_OAUTH_SCOPES ?? '';
@@ -77,8 +86,8 @@ function getAuthConfig(): AuthConfig {
 // a resolved/Format-3 referral link or live landing params), try to resolve a
 // fresh per-user token via the app-builder BFF proxy. Strictly non-blocking:
 // any failure leaves the config untouched so login/sign-up always proceeds.
-async function getAuthConfigWithReferral(): Promise<AuthConfig> {
-  const config = getAuthConfig();
+async function getAuthConfigWithReferral(lang?: string): Promise<AuthConfig> {
+  const config = getAuthConfig(lang);
   if (!config.affiliateToken) {
     try {
       const referralLink = process.env.NEXT_PUBLIC_DERIV_REFERRAL_LINK ?? '';
@@ -112,6 +121,7 @@ export interface UseAuthReturn {
 }
 
 export function useAuth(): UseAuthReturn {
+  const { currentLang } = useAppTranslations();
   const [authState, setAuthState] = useState<AuthState>(() =>
     typeof window !== 'undefined' && getAuthInfo() ? 'authenticated' : 'unauthenticated'
   );
@@ -300,14 +310,15 @@ export function useAuth(): UseAuthReturn {
 
   // Phase 1: Initiate login — includes partner attribution params, resolving a
   // fresh per-user Scaleo token via the BFF proxy when needed (non-blocking).
+  // Forwards `lang` so Deriv's home app continues in the selected language (#559).
   const login = useCallback(async () => {
-    await initiateLogin(await getAuthConfigWithReferral());
-  }, []);
+    await initiateLogin(await getAuthConfigWithReferral(currentLang));
+  }, [currentLang]);
 
   // Initiate sign-up — adds prompt=registration and partner attribution params
   const signUp = useCallback(async () => {
-    await initiateSignUp(await getAuthConfigWithReferral());
-  }, []);
+    await initiateSignUp(await getAuthConfigWithReferral(currentLang));
+  }, [currentLang]);
 
   // Logout: close WS (handled by useDerivWS cleanup), clear storage, reset state
   const logout = useCallback(() => {
